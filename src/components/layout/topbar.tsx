@@ -7,13 +7,25 @@ import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { NotificationsPanel } from "@/components/layout/notifications-panel";
 import { UserMenu } from "@/components/layout/user-menu";
+import type { SessionUser } from "@/components/layout/app-shell";
+import type { NotificationItem } from "@/lib/mock/data";
 import { useSidebar } from "@/components/providers/sidebar-provider";
+import { useDrawer } from "@/components/providers/drawer-provider";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-export function Topbar({ onSearchClick }: { onSearchClick: () => void }) {
+export function Topbar({
+  onSearchClick,
+  user,
+  initialNotifications,
+}: {
+  onSearchClick: () => void;
+  user: SessionUser;
+  initialNotifications: NotificationItem[];
+}) {
   const { toggle, setMobileOpen } = useSidebar();
+  const { openDrawer } = useDrawer();
 
   return (
     <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-border bg-background/80 px-3 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:px-4">
@@ -61,11 +73,11 @@ export function Topbar({ onSearchClick }: { onSearchClick: () => void }) {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuLabel>Create new</DropdownMenuLabel>
-            <DropdownMenuItem>Lead</DropdownMenuItem>
-            <DropdownMenuItem>Contact</DropdownMenuItem>
-            <DropdownMenuItem>Company</DropdownMenuItem>
-            <DropdownMenuItem>Deal</DropdownMenuItem>
-            <DropdownMenuItem>Task</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => openDrawer("lead")}>Lead</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => openDrawer("contact")}>Contact</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => openDrawer("company")}>Company</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => openDrawer("deal")}>Deal</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => openDrawer("task")}>Task</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
         <Button variant="ghost" size="icon" className="sm:hidden" aria-label="Quick create">
@@ -76,9 +88,9 @@ export function Topbar({ onSearchClick }: { onSearchClick: () => void }) {
           <HelpCircle className="size-4" />
         </Button>
         <ThemeToggle />
-        <NotificationsPanel />
+        <NotificationsPanel initialItems={initialNotifications} />
         <div className="mx-1 h-6 w-px bg-border" />
-        <UserMenu />
+        <UserMenu user={user} />
       </div>
     </header>
   );

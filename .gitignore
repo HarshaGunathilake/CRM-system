@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# env files
+.env
+.env*.local
+
+# local dev-only email/file storage fallback
+/.local-emails
+/public/uploads

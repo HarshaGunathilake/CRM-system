@@ -1,5 +1,9 @@
-import { ComingSoon } from "@/components/shared/coming-soon";
+import { TeamTasksPageClient } from "@/components/tasks/team-tasks-page-client";
+import { getTasks } from "@/lib/actions/tasks";
 
-export default function Page() {
-  return <ComingSoon title="Team Tasks" />;
+export const dynamic = "force-dynamic";
+
+export default async function TeamTasksPage() {
+  const tasks = await getTasks();
+  return <TeamTasksPageClient tasks={tasks} />;
 }

@@ -6,8 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { notifications as seed, type NotificationItem } from "@/lib/mock/data";
+import type { NotificationItem } from "@/lib/mock/data";
 import { cn } from "@/lib/utils";
+import {
+  getMyNotifications, markNotificationReadAction, markAllNotificationsReadAction,
+} from "@/lib/actions/notifications";
 
 const CATEGORY_ICON: Record<NotificationItem["category"], React.ComponentType<{ className?: string }>> = {
   Mentions: AtSign,
@@ -27,9 +30,33 @@ function timeAgo(d: Date) {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
-export function NotificationsPanel() {
-  const [items, setItems] = React.useState(seed);
+const POLL_INTERVAL_MS = 20_000;
+
+export function NotificationsPanel({ initialItems }: { initialItems: NotificationItem[] }) {
+  const [items, setItems] = React.useState(initialItems);
   const unread = items.filter((i) => !i.read).length;
+
+  React.useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const fresh = await getMyNotifications();
+        setItems(fresh);
+      } catch {
+        // Network hiccup — keep showing what we have and retry next tick.
+      }
+    }, POLL_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, []);
+
+  const markOneRead = React.useCallback(async (id: string) => {
+    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, read: true } : i)));
+    await markNotificationReadAction(id);
+  }, []);
+
+  const markAllRead = React.useCallback(async () => {
+    setItems((prev) => prev.map((i) => ({ ...i, read: true })));
+    await markAllNotificationsReadAction();
+  }, []);
 
   return (
     <Popover>
@@ -46,12 +73,7 @@ export function NotificationsPanel() {
       <PopoverContent align="end" className="w-96 p-0">
         <div className="flex items-center justify-between border-b border-border p-3">
           <span className="text-sm font-semibold">Notifications</span>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 text-xs"
-            onClick={() => setItems((prev) => prev.map((i) => ({ ...i, read: true })))}
-          >
+          <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={markAllRead}>
             Mark all as read
           </Button>
         </div>
@@ -63,16 +85,16 @@ export function NotificationsPanel() {
             <TabsTrigger value="Deals" className="data-[state=active]:bg-muted">Deals</TabsTrigger>
           </TabsList>
           <TabsContent value="all" className="mt-2">
-            <NotificationList items={items} onRead={setItems} />
+            <NotificationList items={items} onRead={markOneRead} />
           </TabsContent>
           <TabsContent value="Mentions" className="mt-2">
-            <NotificationList items={items.filter((i) => i.category === "Mentions")} onRead={setItems} />
+            <NotificationList items={items.filter((i) => i.category === "Mentions")} onRead={markOneRead} />
           </TabsContent>
           <TabsContent value="Tasks" className="mt-2">
-            <NotificationList items={items.filter((i) => i.category === "Tasks")} onRead={setItems} />
+            <NotificationList items={items.filter((i) => i.category === "Tasks")} onRead={markOneRead} />
           </TabsContent>
           <TabsContent value="Deals" className="mt-2">
-            <NotificationList items={items.filter((i) => i.category === "Deals")} onRead={setItems} />
+            <NotificationList items={items.filter((i) => i.category === "Deals")} onRead={markOneRead} />
           </TabsContent>
         </Tabs>
       </PopoverContent>
@@ -85,7 +107,7 @@ function NotificationList({
   onRead,
 }: {
   items: NotificationItem[];
-  onRead: React.Dispatch<React.SetStateAction<NotificationItem[]>>;
+  onRead: (id: string) => void;
 }) {
   if (items.length === 0) {
     return <div className="py-10 text-center text-sm text-muted-foreground">You&apos;re all caught up.</div>;
@@ -98,9 +120,7 @@ function NotificationList({
           return (
             <button
               key={n.id}
-              onClick={() =>
-                onRead((prev) => prev.map((i) => (i.id === n.id ? { ...i, read: true } : i)))
-              }
+              onClick={() => onRead(n.id)}
               className={cn(
                 "flex items-start gap-3 rounded-lg p-2.5 text-left transition-colors hover:bg-accent/60",
                 !n.read && "bg-primary/[0.04]"

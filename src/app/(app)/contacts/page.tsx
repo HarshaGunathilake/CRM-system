@@ -1,5 +1,9 @@
-import { ComingSoon } from "@/components/shared/coming-soon";
+import { ContactsPageClient } from "@/components/contacts/contacts-page-client";
+import { getContacts } from "@/lib/actions/contacts";
 
-export default function Page() {
-  return <ComingSoon title="Contacts" />;
+export const dynamic = "force-dynamic";
+
+export default async function ContactsPage() {
+  const contacts = await getContacts();
+  return <ContactsPageClient contacts={contacts} />;
 }

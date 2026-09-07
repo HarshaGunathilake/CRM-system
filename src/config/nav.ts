@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Users, Building2, Handshake, GitBranch, Activity,
   TrendingUp, FileText, ShoppingCart, Package, Inbox, Mail, Phone,
   MessageSquare, CheckSquare, CalendarDays, Workflow, Sliders, Zap,
-  BarChart3, PieChart, LineChart, UserCog, Users2, ShieldCheck, Settings,
+  BarChart3, PieChart, LineChart, UserCog, Users2, ShieldCheck, Settings, ScrollText,
 } from "lucide-react";
 
 export interface NavLeaf {
@@ -83,6 +83,7 @@ export const navSections: NavSection[] = [
       { title: "Users", href: "/admin/users", icon: UserCog },
       { title: "Teams", href: "/admin/teams", icon: Users2 },
       { title: "Roles & Permissions", href: "/admin/roles", icon: ShieldCheck },
+      { title: "Audit Logs", href: "/admin/audit-logs", icon: ScrollText },
       { title: "Settings", href: "/settings", icon: Settings },
     ],
   },

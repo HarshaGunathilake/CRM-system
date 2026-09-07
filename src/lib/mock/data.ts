@@ -423,3 +423,205 @@ export const recentOrders = [
   { id: "ORD-10419", company: "Summit Supplies", amount: 6320, status: "Shipped" },
   { id: "ORD-10418", company: "Beta Manufacturing", amount: 9840, status: "Confirmed" },
 ];
+
+// ---- Calendar events ----
+export type CalendarEventType = "Meeting" | "Call" | "Task" | "Follow-up" | "Deadline";
+
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  type: CalendarEventType;
+  date: Date;
+  time: string;
+  withWhom?: string;
+}
+
+const EVENT_TYPES: CalendarEventType[] = ["Meeting", "Call", "Task", "Follow-up", "Deadline"];
+
+export const calendarEvents: CalendarEvent[] = Array.from({ length: 46 }).map((_, i) => {
+  const type = pick(EVENT_TYPES);
+  const day = int(-10, 24);
+  const hour = int(8, 17);
+  return {
+    id: `ev_${i + 1}`,
+    title: pick([
+      "Discovery call", "Product demo", "Contract review", "Renewal check-in",
+      "Onboarding kickoff", "QBR", "Pricing discussion", "Follow-up email",
+      "Proposal deadline", "Team sync", "Executive briefing", "Site visit",
+    ]),
+    type,
+    date: daysAgo(-day),
+    time: `${hour}:00`,
+    withWhom: rand() > 0.3 ? pick(companies).name : undefined,
+  };
+});
+
+// ---- Inbox / email data ----
+export type MailFolder = "Inbox" | "Sent" | "Drafts" | "Starred" | "Archived";
+
+export interface EmailMessage {
+  id: string;
+  from: string;
+  fromEmail: string;
+  subject: string;
+  preview: string;
+  body: string[];
+  timestamp: Date;
+  folder: MailFolder;
+  starred: boolean;
+  read: boolean;
+  attachments: string[];
+}
+
+const EMAIL_SUBJECTS = [
+  "Re: Enterprise proposal follow-up",
+  "Contract redlines attached",
+  "Quick question about pricing tiers",
+  "Renewal terms for next year",
+  "Demo recap and next steps",
+  "Invoice #INV-3021 receipt",
+  "Onboarding kickoff — welcome!",
+  "Can we move Thursday's call?",
+  "Product roadmap questions",
+  "Introduction: new account contact",
+  "Signed order form",
+  "Following up from the trade show",
+];
+
+const BODY_PARAGRAPHS = [
+  "Thanks for the quick turnaround on this — really appreciate the detail in your last note.",
+  "I looped in our procurement team so we can move this through approval faster on our end.",
+  "Could you send over the updated pricing sheet reflecting the annual commitment discount?",
+  "We're aligned internally on moving forward, just ironing out a couple of legal points.",
+  "Let me know if a call this week works better than email for hashing out details.",
+  "Attaching the notes from our last sync in case it's useful for your team.",
+];
+
+export const emails: EmailMessage[] = Array.from({ length: 42 }).map((_, i) => {
+  const folder: MailFolder = pick(["Inbox", "Inbox", "Inbox", "Sent", "Drafts", "Archived"] as MailFolder[]);
+  const person = pick(contacts);
+  const subject = pick(EMAIL_SUBJECTS);
+  return {
+    id: `em_${i + 1}`,
+    from: folder === "Sent" || folder === "Drafts" ? "You" : person.name,
+    fromEmail: folder === "Sent" || folder === "Drafts" ? "alex.morgan@nimbuscrm.com" : person.email,
+    subject,
+    preview: pick(BODY_PARAGRAPHS),
+    body: pickN(BODY_PARAGRAPHS, int(2, 4)),
+    timestamp: daysAgo(int(0, 21)),
+    folder,
+    starred: rand() > 0.8,
+    read: folder !== "Inbox" || rand() > 0.35,
+    attachments: rand() > 0.7 ? ["Proposal.pdf"] : [],
+  };
+});
+
+// ---- Report-specific series ----
+export const repPerformance = OWNERS.map((owner) => ({
+  label: owner.split(" ")[0],
+  revenue: int(80_000, 620_000),
+  deals: int(8, 42),
+}));
+
+export const dealVelocity = [
+  { label: "New Lead", days: 3 },
+  { label: "Qualified", days: 6 },
+  { label: "Proposal", days: 9 },
+  { label: "Negotiation", days: 12 },
+  { label: "Won", days: 4 },
+];
+
+export const customerGrowth = Array.from({ length: 12 }).map((_, i) => {
+  const d = new Date();
+  d.setMonth(d.getMonth() - (11 - i));
+  return {
+    label: d.toLocaleDateString("en-US", { month: "short" }),
+    new: int(18, 60),
+    churned: int(2, 14),
+  };
+});
+
+export const activityPerformance = Array.from({ length: 8 }).map((_, i) => {
+  const d = new Date();
+  d.setDate(d.getDate() - (7 - i) * 4);
+  return {
+    label: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+    calls: int(20, 80),
+    emails: int(40, 160),
+    meetings: int(5, 25),
+  };
+});
+
+export const leadConversionSeries = Array.from({ length: 8 }).map((_, i) => {
+  const d = new Date();
+  d.setMonth(d.getMonth() - (7 - i));
+  return { label: d.toLocaleDateString("en-US", { month: "short" }), rate: Number((int(180, 320) / 10).toFixed(1)) };
+});
+
+// ---------------------------------------------------------------------------
+// Audit logs
+// ---------------------------------------------------------------------------
+export interface AuditLogEntry {
+  id: string;
+  actor: string;
+  actorEmail: string;
+  action: string;
+  entityType: string;
+  entity: string;
+  timestamp: Date;
+  ip: string;
+  severity: "info" | "warning" | "critical";
+}
+
+const AUDIT_ACTIONS = [
+  { action: "Created", entityType: "Lead", severity: "info" as const },
+  { action: "Updated", entityType: "Lead", severity: "info" as const },
+  { action: "Deleted", entityType: "Lead", severity: "warning" as const },
+  { action: "Created", entityType: "Contact", severity: "info" as const },
+  { action: "Updated", entityType: "Contact", severity: "info" as const },
+  { action: "Created", entityType: "Company", severity: "info" as const },
+  { action: "Updated", entityType: "Deal", severity: "info" as const },
+  { action: "Moved stage", entityType: "Deal", severity: "info" as const },
+  { action: "Closed won", entityType: "Deal", severity: "info" as const },
+  { action: "Closed lost", entityType: "Deal", severity: "warning" as const },
+  { action: "Deleted", entityType: "Deal", severity: "warning" as const },
+  { action: "Assigned", entityType: "Task", severity: "info" as const },
+  { action: "Completed", entityType: "Task", severity: "info" as const },
+  { action: "Sent", entityType: "Email", severity: "info" as const },
+  { action: "Logged in", entityType: "Session", severity: "info" as const },
+  { action: "Failed login", entityType: "Session", severity: "critical" as const },
+  { action: "Changed permissions", entityType: "Role", severity: "critical" as const },
+  { action: "Created", entityType: "User", severity: "warning" as const },
+  { action: "Deactivated", entityType: "User", severity: "critical" as const },
+  { action: "Exported data", entityType: "Report", severity: "warning" as const },
+  { action: "Updated", entityType: "Custom Field", severity: "info" as const },
+  { action: "Enabled", entityType: "Workflow", severity: "info" as const },
+  { action: "Disabled", entityType: "Workflow", severity: "warning" as const },
+  { action: "Updated", entityType: "Billing", severity: "critical" as const },
+];
+
+function randomIp() {
+  return `${int(10, 250)}.${int(0, 255)}.${int(0, 255)}.${int(1, 254)}`;
+}
+
+export const auditLogs: AuditLogEntry[] = Array.from({ length: 180 }).map((_, i) => {
+  const entry = pick(AUDIT_ACTIONS);
+  const person = pick(contacts);
+  const actorName = i % 6 === 0 ? "System" : makePersonName();
+  return {
+    id: `AUD-${(10500 + i).toString()}`,
+    actor: actorName,
+    actorEmail: actorName === "System" ? "system@crmapp.io" : emailFor(actorName, "crmapp.io"),
+    action: entry.action,
+    entityType: entry.entityType,
+    entity:
+      entry.entityType === "Deal" || entry.entityType === "Lead"
+        ? `${pick(COMPANY_PREFIX)} ${pick(COMPANY_SUFFIX)} — ${entry.entityType}`
+        : entry.entityType === "Session" || entry.entityType === "User"
+          ? person?.name ?? makePersonName()
+          : `${entry.entityType} #${int(1000, 9999)}`,
+    timestamp: daysAgo(int(0, 90)),
+    ip: randomIp(),
+    severity: entry.severity,
+  };
+}).sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());

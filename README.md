@@ -19,6 +19,10 @@ A premium, enterprise-grade CRM SaaS UI built with Next.js App Router, TypeScrip
 npm install
 npm run dev
 ```
+## Admin Login
+
+demo@nimbuscrm.com
+password123
 
 Open http://localhost:3000 — it redirects to `/dashboard`.
 

@@ -3,17 +3,33 @@
 import * as React from "react";
 import { motion } from "framer-motion";
 import { CalendarDays, SlidersHorizontal, Download, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { KpiCard } from "@/components/dashboard/kpi-card";
-import { RevenueChart } from "@/components/dashboard/revenue-chart";
-import { SalesFunnel } from "@/components/dashboard/sales-funnel";
-import { RevenueDonut } from "@/components/dashboard/revenue-donut";
-import { PipelineKanbanPreview } from "@/components/dashboard/pipeline-kanban-preview";
-import { TopCustomersTable } from "@/components/dashboard/top-customers-table";
-import { ActivityFeed } from "@/components/dashboard/activity-feed";
-import { kpis } from "@/lib/mock/data";
+import { WIDGETS, DEFAULT_LAYOUT } from "@/components/dashboard/widget-registry";
+import { CustomizeDashboardDialog, type LayoutItem } from "@/components/dashboard/customize-dashboard-dialog";
+
+const STORAGE_KEY = "dashboard:layout:v1";
 
 export default function DashboardPage() {
+  const [layout, setLayout] = React.useState<LayoutItem[]>(DEFAULT_LAYOUT);
+  const [customizeOpen, setCustomizeOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(STORAGE_KEY);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (stored) setLayout(JSON.parse(stored));
+    } catch {}
+  }, []);
+
+  const saveLayout = (l: LayoutItem[]) => {
+    setLayout(l);
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(l));
+    } catch {}
+    toast.success("Dashboard layout saved");
+  };
+
   return (
     <div className="flex flex-col gap-6">
       <motion.div
@@ -32,48 +48,29 @@ export default function DashboardPage() {
           <Button variant="outline" size="sm">
             <CalendarDays className="size-3.5" /> Feb 1 – Feb 28
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => setCustomizeOpen(true)}>
             <SlidersHorizontal className="size-3.5" /> Customize
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => toast.success("Export started", { description: "Your dashboard PDF will download shortly." })}>
             <Download className="size-3.5" /> Export
           </Button>
-          <Button variant="outline" size="icon" aria-label="Refresh">
+          <Button variant="outline" size="icon" aria-label="Refresh" onClick={() => toast.info("Dashboard refreshed")}>
             <RefreshCw className="size-3.5" />
           </Button>
         </div>
       </motion.div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
-        {kpis.map((k, i) => (
-          <KpiCard
-            key={k.key}
-            kpiKey={k.key}
-            label={k.label}
-            value={k.value}
-            format={k.format as "currency" | "number" | "percent"}
-            change={k.change}
-            spark={k.spark}
-            index={i}
-          />
-        ))}
-      </div>
+      {layout.filter((l) => l.visible).map((l) => {
+        const widget = WIDGETS.find((w) => w.id === l.id);
+        return widget ? <React.Fragment key={l.id}>{widget.render()}</React.Fragment> : null;
+      })}
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <RevenueChart />
-        <SalesFunnel />
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <RevenueDonut />
-        <TopCustomersTable />
-      </div>
-
-      <PipelineKanbanPreview />
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <ActivityFeed />
-      </div>
+      <CustomizeDashboardDialog
+        open={customizeOpen}
+        onOpenChange={setCustomizeOpen}
+        layout={layout}
+        onLayoutChange={saveLayout}
+      />
     </div>
   );
 }
